@@ -88,9 +88,14 @@ def run_apk_job(job_id, apk_path):
 
         JOBS[job_id] = {"status": "inference", "progress": 80}
         subprocess.run([
-            "python", "pipeline/model_inference.py",
-            "--input-dir", result_dir, "--family", job_id, "--out", result_path
-        ], check=True)
+
+
+          "python", "pipeline/model_inference.py",
+          "--input-dir", result_dir,
+          "--family", job_id,
+          "--out", result_path
+          ], check=True, cwd=os.path.dirname(__file__))
+
 
         # STEP 4: Incremental MITRE Mapping
         JOBS[job_id] = {"status": "mitre_mapping", "progress": 90}
@@ -137,9 +142,12 @@ async def analyze_installed(pkg_name: str = Form(...)):
 
             JOBS[job_id] = {"status": "inference", "progress": 80}
             subprocess.run([
-                "python", "pipeline/model_inference.py",
-                "--input-dir", result_dir, "--family", job_id, "--out", result_path
-            ], check=True)
+            "python", "pipeline/model_inference.py",
+            "--input-dir", result_dir,
+            "--family", job_id,
+            "--out", result_path
+        ], check=True, cwd=os.path.dirname(__file__))
+
 
             # STEP 4: Incremental MITRE Mapping
             JOBS[job_id] = {"status": "mitre_mapping", "progress": 90}
@@ -160,7 +168,7 @@ async def analyze_installed(pkg_name: str = Form(...)):
 
 def run_incremental_mitre_mapping(job_id: str, result_path: str):
     """
-    Runs descGenAndMapping.py syscall-by-syscall and writes incremental output
+    Runs descGenAndMapping_single.py syscall-by-syscall and writes incremental output
     so frontend can display mappings in real time.
     """
     result_dir = os.path.dirname(result_path)
@@ -175,23 +183,44 @@ def run_incremental_mitre_mapping(job_id: str, result_path: str):
 
     # Collect syscall list
     syscall_list = sorted(list(set(sum(data["top_syscalls"].values(), []))))
-    syscall_list = syscall_list[:8]  # Limit to 8 syscalls
+    syscall_list = syscall_list[:8]  # Limit to 8 syscalls max
 
     incremental_results = []
+
     for idx, syscall in enumerate(syscall_list, start=1):
         try:
-            # Run mapping for this syscall only
-            mapping = subprocess.check_output([
-                "python", "pipeline/descGenAndMapping.py", "--syscall", syscall
-            ])
-            item = json.loads(mapping.decode().strip())
+            # --------------------------------------------------------
+            #  RUN SINGLE-SYSCALL MAPPING SCRIPT AND CAPTURE OUTPUT
+            # --------------------------------------------------------
+            process = subprocess.Popen(
+                ["python", "pipeline/descGenAndMapping_single.py", "--syscall", syscall],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True
+            )
+
+            stdout, stderr = process.communicate()
+
+            # --------------------------------------------------------
+            # 🔥 PRINT RESULT TO FASTAPI CONSOLE IMMEDIATELY
+            # --------------------------------------------------------
+            print("\n================ SYSCALL MAPPING COMPLETE ================\n")
+            print(f"SYSCALL → {syscall}")
+            print(stdout)
+            if stderr.strip():
+                print("\n[stderr]")
+                print(stderr)
+            print("===========================================================\n")
+
+            # Parse JSON from mapping output
+            item = json.loads(stdout.strip())
             incremental_results.append(item)
 
-            # Write partial progress
+            # Save partial mapping to file
             with open(mitre_out, "w") as mf:
                 json.dump(incremental_results, mf, indent=4)
 
-            # Update in-memory progress
+            # Update backend progress
             JOBS[job_id] = {
                 "status": "mitre_mapping",
                 "progress": 90 + int((idx / len(syscall_list)) * 10)
@@ -200,12 +229,14 @@ def run_incremental_mitre_mapping(job_id: str, result_path: str):
         except Exception as e:
             logging.warning(f"Mapping failed for {syscall}: {e}")
 
-    # Merge final results
+    # Merge final mapping into result.json
     with open(result_path, "r") as rf:
         final_data = json.load(rf)
     final_data["mitre_mapping"] = incremental_results
+
     with open(result_path, "w") as wf:
         json.dump(final_data, wf, indent=4)
+
 
 
 
