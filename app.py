@@ -1,6 +1,4 @@
-# =====================================================
-#  FINAL app.py (v3) — Incremental MITRE Mapping + Live Updates
-# =====================================================
+
 
 import os
 import uuid
@@ -201,9 +199,6 @@ def run_incremental_mitre_mapping(job_id: str, result_path: str):
 
             stdout, stderr = process.communicate()
 
-            # --------------------------------------------------------
-            # 🔥 PRINT RESULT TO FASTAPI CONSOLE IMMEDIATELY
-            # --------------------------------------------------------
             print("\n================ SYSCALL MAPPING COMPLETE ================\n")
             print(f"SYSCALL → {syscall}")
             print(stdout)
