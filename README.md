@@ -11,17 +11,17 @@ The pipeline integrates:
 - **Incremental MITRE mapping with live updates**
 
 ## Folder Structure
-├── pipeline/
-│ ├── run_genymotion_strace.py
-│ ├── run_genymotion_strace_installed.py
-│ ├── parse_syscall.py
-│ ├── model_inference.py
-│ ├── descGenAndMapping_single.py
-│
-├── Models/
-│ └── AE_v12_models/ # Trained category-wise Autoencoder 
-│
-├── app.py # FastAPI backend
+pipeline/
+   - run_genymotion_strace.py
+   - run_genymotion_strace_installed.py
+   - parse_syscall.py
+   - model_inference.py
+   - descGenAndMapping_single.py
+
+Models/
+   -AE_v12_models/ # Trained category-wise Autoencoder 
+
+app.py # FastAPI backend
 
 ## Steps To Analyze a Sample
 1. Install all dependencies from requirement.txt
@@ -36,6 +36,19 @@ The pipeline integrates:
      -MITRE ATT&CK mapping
      -Intermediate progress is printed to the backend console during execution
 5. See the final result at GET /result/<job_id>
+
+## Android Execution Environment 
+   SMC-SAM dynamically executes APKs using Genymotion Emulator + Android 8.0.
+   Required:
+   -Genymotion Desktop
+          https://www.genymotion.com/download/
+   -VirtualBox (6.x or 7.x) — required backend for Genymotion
+          https://www.virtualbox.org/
+
+   -Android Image(selected when creating a virtual device in genymotion)
+          Android 8.0 (Oreo)  
+   -ADB Requirements
+         Android Debug Bridge (ADB) must be installed and accessible in PATH:
 
 
 
