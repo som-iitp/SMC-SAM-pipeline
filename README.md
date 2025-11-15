@@ -40,15 +40,16 @@ app.py # FastAPI backend
 ## Android Execution Environment 
    SMC-SAM dynamically executes APKs using Genymotion Emulator + Android 8.0.
    Required:
-   -Genymotion Desktop
+   1.Genymotion Desktop
           https://www.genymotion.com/download/
-   -VirtualBox (6.x or 7.x) — required backend for Genymotion
+   2.VirtualBox (6.x or 7.x) required in backend for Genymotion
           https://www.virtualbox.org/
 
-   -Android Image(selected when creating a virtual device in genymotion)
+   3.Android Image(selected when creating a virtual device in genymotion)
           Android 8.0 (Oreo)  
-   -ADB Requirements
+   4.ADB Requirements
          Android Debug Bridge (ADB) must be installed and accessible in PATH:
+   5.Strace tool for system call monitoring
 
 
 
