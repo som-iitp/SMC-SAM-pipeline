@@ -1,0 +1,22 @@
+# Ignore APK uploads
+uploads/
+*.apk
+
+# Ignore strace + inference outputs
+output/
+logs/
+
+# Python cache
+__pycache__/
+*.pyc
+
+# Environment files
+.env
+.venv/
+venv/
+
+# FastAPI temporary files
+*.log
+
+
+
