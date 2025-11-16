@@ -26,7 +26,7 @@ MODEL_DIR = "Models/AE_v12_models"   # contains *_ae.keras and *_scaler.pkl
 # ============================================================
 def load_matrix(path):
     if not os.path.exists(path):
-        print(f"⚠ Missing CSV: {path}")
+        print(f" Missing CSV: {path}")
         return None
     df = pd.read_csv(path)
 
@@ -34,7 +34,7 @@ def load_matrix(path):
     df_num = df.select_dtypes(include=[np.number])
 
     if df_num.empty:
-        print(f"⚠ No numeric columns found in: {path}")
+        print(f" No numeric columns found in: {path}")
         return None
 
     return df_num
@@ -63,7 +63,7 @@ def analyze_category(df, model_path, scaler_path):
     #         (e.g., new syscall or extra index column)
     # --------------------------------------------------------
     if df.shape[1] > expected_dim:
-        print(f"⚠ DF has MORE columns than training. Truncating to first {expected_dim}.")
+        print(f" DF has MORE columns than training. Truncating to first {expected_dim}.")
         df = df.iloc[:, :expected_dim]
 
     # --------------------------------------------------------
@@ -71,7 +71,7 @@ def analyze_category(df, model_path, scaler_path):
     #         (rare, but we handle by zero-padding)
     # --------------------------------------------------------
     elif df.shape[1] < expected_dim:
-        print(f"⚠ DF has FEWER columns than training. Padding with zeros to reach {expected_dim}.")
+        print(f" DF has FEWER columns than training. Padding with zeros to reach {expected_dim}.")
         missing = expected_dim - df.shape[1]
         for i in range(missing):
             df[f"_PAD_{i}"] = 0.0
@@ -166,7 +166,7 @@ def main():
   
     errors = np.array([c["avg_error"] for c in top3])
     thresholds = np.array([c["threshold"] for c in top3])
-    malicious = bool(np.any(errors < thresholds))
+    malicious = bool(np.any(errors <= thresholds))
 
     response = {
         "family_id": family,
