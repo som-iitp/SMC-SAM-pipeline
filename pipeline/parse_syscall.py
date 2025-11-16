@@ -2,35 +2,25 @@ import os
 import json
 import argparse
 import pandas as pd
+from dotenv import load_dotenv
 
-# === Syscall Categories === #
-CATEGORIES = {
-        "file_system": {
-        "open", "read", "write", "close", "lseek", "stat", "fstat", "unlink", "rename", "mkdir", "rmdir",
-        "openat", "_llseek", "fstat64", "fstatat64", "readlinkat", "unlinkat", "faccessat", "fcntl64",
-        "fdatasync", "flock", "statfs64", "writev", "pread64", "brk", "getcwd", "access", "chdir",
-        "dup", "dup3", "fstatfs64", "getdents64", "mkdirat", "pwrite64", "renameat", "fsync", "ftruncate64",
-        "truncate", "pread", "pwrite", "fchmod", "umask"
-    },
-    "process_control": {
-        "clone", "execve", "exit", "exit_group", "getpid", "getppid", "getpgid", "gettid", "prctl",
-        "set_tid_address", "ptrace", "personality", "wait4", "uname", "sysinfo", "setrlimit", "sched_yield",
-        "sched_getscheduler", "setpriority", "getpriority", "kill", "tgkill", "restart_syscall", "rt_sigsuspend"
-    },
-    "memory_management": {
-        "mmap", "mmap2", "munmap", "madvise", "mprotect", "set_thread_area", "clock_gettime", "mlock", "nanosleep"
-    },
-    "interprocess_communication": {
-        "pipe", "pipe2", "pselect6", "ppoll", "rt_sigprocmask", "rt_sigreturn", "rt_tgsigqueueinfo",
-        "sigaction", "sigaltstack", "sigreturn", "getuid32", "ugetrlimit", "setitimer", "process_vm_readv",
-        "epoll_ctl", "socketpair", "sendmsg"
-    },
-    "device_management": {
-        "ioctl", "inb", "outb", "inl", "outl", "socket", "connect", "accept", "send", "recv", "bind",
-        "listen", "sendto", "recvfrom", "getsockname", "setsockopt", "shutdown", "getsockopt",
-        "timerfd_create", "timerfd_settime", "getrlimit"
-    }
-}
+# Load environment variables from .env if present
+load_dotenv()
+
+# === Load Syscall Categories from External Private JSON === #
+def load_categories():
+    categories_file = os.getenv("SYS_CALL_CATEGORIES", "config/categories.json")
+    if not os.path.exists(categories_file):
+        raise FileNotFoundError(f"❌ Category file not found: {categories_file}")
+    
+    with open(categories_file, "r", encoding="utf-8") as f:
+        categories = json.load(f)
+
+    print(f"🔐 Loaded categories from: {categories_file}")
+    return categories
+
+
+CATEGORIES = load_categories()
 
 
 def refined_frequency_matrix(trace_dir, family_name, nested=True):
@@ -53,7 +43,8 @@ def refined_frequency_matrix(trace_dir, family_name, nested=True):
                 filepath = os.path.join(root, file)
                 apk_folder = os.path.basename(root) if nested else os.path.splitext(file)[0]
 
-                syscall_counts = dict.fromkeys(syscall_set, 0)
+                # Initialize syscall counts for this APK
+                syscall_counts = {sc: 0 for sc in syscall_set}
                 syscall_counts["APK"] = apk_folder
 
                 try:
