@@ -18,10 +18,8 @@ pipeline/
    - model_inference.py
    - descGenAndMapping_single.py
 
-Models/
-   -AE_v12_models/ # Trained category-wise Autoencoder 
-
-app.py # FastAPI backend
+Models
+app.py 
 
 ## Steps To Analyze a Sample
 1. Install all dependencies from requirement.txt
