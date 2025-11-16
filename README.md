@@ -11,17 +11,15 @@ The pipeline integrates:
 - **Incremental MITRE mapping with live updates**
 
 ## Folder Structure
-├── pipeline/
-│ ├── run_genymotion_strace.py
-│ ├── run_genymotion_strace_installed.py
-│ ├── parse_syscall.py
-│ ├── model_inference.py
-│ ├── descGenAndMapping_single.py
-│
-├── Models/
-│ └── AE_v12_models/ # Trained category-wise Autoencoder 
-│
-├── app.py # FastAPI backend
+pipeline/
+   - run_genymotion_strace.py
+   - run_genymotion_strace_installed.py
+   - parse_syscall.py
+   - model_inference.py
+   - descGenAndMapping_single.py
+
+Models
+app.py 
 
 ## Steps To Analyze a Sample
 1. Install all dependencies from requirement.txt
@@ -36,6 +34,15 @@ The pipeline integrates:
      -MITRE ATT&CK mapping
      -Intermediate progress is printed to the backend console during execution
 5. See the final result at GET /result/<job_id>
+
+## Android Execution Environment 
+1. Genymotion Desktop( https://www.genymotion.com/download/)
+2. VirtualBox (6.x or 7.x) required in backend for Genymotion(https://www.virtualbox.org/)
+3. Android Image(selected when creating a virtual device in genymotion)
+   -Android 8.0 (Oreo)  
+4. ADB 
+   -Android Debug Bridge (ADB) must be installed and accessible in PATH.
+5. Strace tool for system call monitoring
 
 
 
