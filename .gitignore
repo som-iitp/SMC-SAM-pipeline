@@ -11,12 +11,16 @@ __pycache__/
 *.pyc
 
 # Environment files
-.env
+config/.env
 .venv/
 venv/
 
 # FastAPI temporary files
 *.log
+
+# Ignore environment and configuration files
+
+config/categories.json
 
 
 
