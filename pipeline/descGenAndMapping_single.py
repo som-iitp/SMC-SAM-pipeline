@@ -4,15 +4,13 @@ from sentence_transformers import SentenceTransformer, util
 from ollama import chat
 import pandas as pd
 
-# ==========================================================
-# ✅ Config
-# ==========================================================
+
 system_prompt = (
     "You are a cybersecurity analyst writing MITRE ATT&CK-style mobile threat procedure examples. "
     "Generate one sentence describing what the attacker is doing using this syscall."
 )
 
-# ✅ Load model and MITRE dataset
+
 model = SentenceTransformer("all-distilroberta-v1")
 mitre_df = pd.read_csv("mitre_procedures_with_tactics.csv")
 mitre_descriptions = mitre_df["Procedure Example"].astype(str).tolist()
