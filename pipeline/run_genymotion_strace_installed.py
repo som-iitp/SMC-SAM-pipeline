@@ -16,18 +16,18 @@ def process_installed(pkg, out_dir):
     os.makedirs(out_dir, exist_ok=True)
 
     try:
-        print(f"✅ Analyzing Installed Package: {pkg}")
+        print(f"Analyzing Installed Package: {pkg}")
         run(f"adb shell am force-stop {pkg}")
         run(f"adb shell monkey -p {pkg} -c android.intent.category.LAUNCHER 1")
 
-        print("⏳ Waiting for app to launch...")
+        print("Waiting for app to launch...")
         time.sleep(WAIT_BEFORE_STRACE)
 
         pid = run(f"adb shell pidof {pkg}").strip()
         if not pid:
             raise RuntimeError("PID not found!")
 
-        print(f"▶ PID = {pid}")
+        print(f"PID = {pid}")
 
         run("adb shell su -c 'rm -f /data/local/tmp/strace.log'")
         run(
@@ -48,12 +48,12 @@ def process_installed(pkg, out_dir):
 
         with open(json_out, "w") as f:
             json.dump(syscalls, f, indent=2)
-        print(f"✅ Syscalls saved: {json_out}")
+        print(f" Syscalls saved: {json_out}")
 
         run(f"adb shell am force-stop {pkg}")
 
     except Exception as e:
-        print(f"❌ ERROR analyzing {pkg}: {e}")
+        print(f" ERROR analyzing {pkg}: {e}")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
