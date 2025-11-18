@@ -16,7 +16,7 @@ SYSTEM_PROMPT = (
     "Generate one sentence describing what the attacker is doing using this syscall."
 )
 
-print("\n🧠 Loading fine-tuned LoRA model...")
+print("Loading fine-tuned LoRA model...")
 llm, tokenizer = FastLanguageModel.from_pretrained(
     MODEL_DIR,
     max_seq_length=2048,
@@ -25,7 +25,7 @@ llm, tokenizer = FastLanguageModel.from_pretrained(
 )
 tokenizer.pad_token = tokenizer.eos_token
 
-print("📚 Loading MITRE dataset + embeddings...")
+print("Loading MITRE dataset + embeddings...")
 embedder = SentenceTransformer("all-distilroberta-v1")
 df = pd.read_csv(MITRE_FILE)
 
@@ -68,12 +68,12 @@ def map_syscall(syscall):
     best = scores.argmax().item()
 
     print("\n=============== MAPPING COMPLETE ===============")
-    print(f"🔹 SYS CALL        : {syscall}")
-    print(f"🔹 GENERATED DESC  : {desc}\n")
-    print(f"🔹 TECHNIQUE ID    : {MITRE_IDS[best]}")
-    print(f"🔹 TECHNIQUE NAME  : {MITRE_NAMES[best]}")
-    print(f"🔹 MATCHED EXAMPLE : {MITRE_TEXTS[best]}")
-    print(f"🔹 COSINE SCORE    : {scores[best].item():.4f}")
+    print(f" SYS CALL        : {syscall}")
+    print(f" GENERATED DESC  : {desc}\n")
+    print(f" TECHNIQUE ID    : {MITRE_IDS[best]}")
+    print(f" TECHNIQUE NAME  : {MITRE_NAMES[best]}")
+    print(f" MATCHED EXAMPLE : {MITRE_TEXTS[best]}")
+    print(f" COSINE SCORE    : {scores[best].item():.4f}")
     print("================================================\n")
 
 
