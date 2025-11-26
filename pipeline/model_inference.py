@@ -14,8 +14,8 @@ CATEGORIES = [
     "interprocess_communication"
 ]
 
+MODEL_DIR = "Models/AE_v12_models"
 
-MODEL_DIR = "Models/AE_v12_models" 
 
 
 def load_matrix(path):
@@ -24,7 +24,7 @@ def load_matrix(path):
         return None
     df = pd.read_csv(path)
 
-    # Keep only numeric columns (drop APK name / ids / etc.)
+    # Keep only numeric columns (APK removed)
     df_num = df.select_dtypes(include=[np.number])
 
     if df_num.empty:
@@ -35,47 +35,53 @@ def load_matrix(path):
 
 
 
+def load_training_stats(stats_path):
+    if not os.path.exists(stats_path):
+        raise FileNotFoundError(f"[ERROR] Training stats not found: {stats_path}")
+
+    with open(stats_path, "r") as f:
+        stats = json.load(f)
+
+    mu = float(stats["mu"])
+    sigma = float(stats["sigma"])
+    threshold = float(stats["threshold"])  
+
+    print(f" Loaded training stats → μ={mu:.6f}, σ={sigma:.6f}, τ={threshold:.6f}")
+    return mu, sigma, threshold
+
+
 def analyze_category(df, model_path, scaler_path):
 
     # 1) Load scaler
     scaler = joblib.load(scaler_path)
 
-    # True number of features used during TRAINING
-    if hasattr(scaler, "n_features_in_"):
-        expected_dim = scaler.n_features_in_
-    else:
-        expected_dim = df.shape[1]  # fallback, but normally not needed
+    # Training dimensionality
+    expected_dim = scaler.n_features_in_ if hasattr(scaler, "n_features_in_") else df.shape[1]
+    print(f" Scaler expects {expected_dim} features.")
+    print(f" Inference DF has {df.shape[1]} numeric columns.")
 
-    print(f"Scaler expects {expected_dim} features.")
-    print(f"Inference DF has {df.shape[1]} numeric columns.")
-
-    # 2) Align DF to expected_dim
-   
+    # 2) Align dimensions
     if df.shape[1] > expected_dim:
-        print(f" DF has MORE columns than training. Truncating to first {expected_dim}.")
+        print(" Truncating extra columns to match training dim.")
         df = df.iloc[:, :expected_dim]
 
-    
     elif df.shape[1] < expected_dim:
-        print(f" DF has FEWER columns than training. Padding with zeros to reach {expected_dim}.")
+        print(" Padding missing features with zeros.")
         missing = expected_dim - df.shape[1]
         for i in range(missing):
             df[f"_PAD_{i}"] = 0.0
         df = df.iloc[:, :expected_dim]
 
-    # Now df.shape[1] == expected_dim
     feature_names = df.columns.to_list()
 
-    # 3) Load full AE model)
+    # 3) Load AE model
     model = load_model(model_path)
     model_input_dim = model.input_shape[-1]
-    print(f"Model input dim: {model_input_dim}")
+    print(f" Model input dim: {model_input_dim}")
 
-    #check: scaler, model, and df must all agree
     if model_input_dim != expected_dim:
         raise ValueError(
-            f"Shape mismatch: scaler expects {expected_dim}, "
-            f"but model input is {model_input_dim}"
+            f"Shape mismatch: scaler expects {expected_dim}, model expects {model_input_dim}"
         )
 
     # 4) Scale data
@@ -84,25 +90,25 @@ def analyze_category(df, model_path, scaler_path):
     # 5) Predict reconstruction
     recon = model.predict(X)
 
-    # 6) Reconstruction error (MSE)
+    # 6) Compute per-sample reconstruction error
     errors = np.mean((X - recon) ** 2, axis=1)
+    avg_error = float(np.mean(errors))
 
-    mu = float(np.mean(errors))
-    sigma = float(np.std(errors))
-    threshold = mu + 3 * sigma  # µ + 3σ
 
-    # 7) Contribution per feature (mean absolute reconstruction error)
+    stats_path = model_path.replace("_ae.keras", "_stats.json")
+    mu, sigma, threshold = load_training_stats(stats_path)
+
+  
     contrib = np.mean(np.abs(X - recon), axis=0)
     top_idx = np.argsort(contrib)[-10:][::-1]
     top_syscalls = [feature_names[i] for i in top_idx]
 
     return {
-        "avg_error": mu,
+        "avg_error": avg_error,
         "sigma": sigma,
         "threshold": threshold,
         "top_syscalls": top_syscalls,
     }
-
 
 
 def main():
@@ -115,9 +121,8 @@ def main():
     base_folder = os.path.abspath(args.input_dir)
     family = args.family
 
-    print(f"\n========== AE_v12 INFERENCE ==========")
-    print(f"FAMILY  : {family}")
-    print(f"DATA DIR: {base_folder}\n")
+    print(f" FAMILY  : {family}")
+    print(f" DATA DIR: {base_folder}\n")
 
     results = []
 
@@ -127,9 +132,9 @@ def main():
         scaler_path = os.path.join(MODEL_DIR, f"{cat}_scaler.pkl")
 
         print(f"\n--- CATEGORY: {cat} ---")
-        print(f"CSV     : {csv_path}")
-        print(f"MODEL   : {model_path}")
-        print(f"SCALER  : {scaler_path}")
+        print(f" CSV     : {csv_path}")
+        print(f" MODEL   : {model_path}")
+        print(f" SCALER  : {scaler_path}")
 
         df = load_matrix(csv_path)
         if df is None:
@@ -143,18 +148,20 @@ def main():
         print("No valid category matrices found. EXITING.")
         return
 
-    # Sort by anomaly score (ascending)
+  
     results.sort(key=lambda x: x["avg_error"])
     top3 = results[:3]
 
-  
     errors = np.array([c["avg_error"] for c in top3])
     thresholds = np.array([c["threshold"] for c in top3])
+
+    # AE trained on MALICIOUS → low error = malicious-like
     malicious = bool(np.any(errors <= thresholds))
 
     response = {
         "family_id": family,
         "malicious": malicious,
+        "threshold_source": "training_saved_values",
         "top_categories": [c["category"] for c in top3],
         "anomaly_scores": {c["category"]: c["avg_error"] for c in top3},
         "thresholds": {c["category"]: c["threshold"] for c in top3},
@@ -164,7 +171,6 @@ def main():
     with open(args.out, "w", encoding="utf-8") as f:
         json.dump(response, f, indent=4)
 
-    print("\n========== FINAL RESULT ==========")
     print(json.dumps(response, indent=4))
     print(f"Saved → {args.out}")
 
