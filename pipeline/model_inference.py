@@ -143,7 +143,7 @@ def main():
         print("No valid category matrices found. EXITING.")
         return
 
-    # Sort by anomaly score (descending)
+    # Sort by anomaly score (ascending)
     results.sort(key=lambda x: x["avg_error"])
     top3 = results[:3]
 
