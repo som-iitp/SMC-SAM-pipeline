@@ -6,9 +6,6 @@ import joblib
 from tensorflow.keras.models import load_model
 import argparse
 
-# ============================================================
-# CONFIG
-# ============================================================
 CATEGORIES = [
     "device_management",
     "file_system",
@@ -17,13 +14,10 @@ CATEGORIES = [
     "interprocess_communication"
 ]
 
-# NOTE: Adjust if needed, but this matches your folder layout:
-MODEL_DIR = "Models/AE_v12_models"   # contains *_ae.keras and *_scaler.pkl
+
+MODEL_DIR = "Models/AE_v12_models" 
 
 
-# ============================================================
-# LOAD CSV MATRIX
-# ============================================================
 def load_matrix(path):
     if not os.path.exists(path):
         print(f" Missing CSV: {path}")
@@ -40,9 +34,7 @@ def load_matrix(path):
     return df_num
 
 
-# ============================================================
-# CATEGORY ANALYSIS
-# ============================================================
+
 def analyze_category(df, model_path, scaler_path):
 
     # 1) Load scaler
@@ -58,18 +50,12 @@ def analyze_category(df, model_path, scaler_path):
     print(f"Inference DF has {df.shape[1]} numeric columns.")
 
     # 2) Align DF to expected_dim
-    # --------------------------------------------------------
-    # CASE A: more columns in DF than in training
-    #         (e.g., new syscall or extra index column)
-    # --------------------------------------------------------
+   
     if df.shape[1] > expected_dim:
         print(f" DF has MORE columns than training. Truncating to first {expected_dim}.")
         df = df.iloc[:, :expected_dim]
 
-    # --------------------------------------------------------
-    # CASE B: fewer columns in DF than training
-    #         (rare, but we handle by zero-padding)
-    # --------------------------------------------------------
+    
     elif df.shape[1] < expected_dim:
         print(f" DF has FEWER columns than training. Padding with zeros to reach {expected_dim}.")
         missing = expected_dim - df.shape[1]
@@ -80,12 +66,12 @@ def analyze_category(df, model_path, scaler_path):
     # Now df.shape[1] == expected_dim
     feature_names = df.columns.to_list()
 
-    # 3) Load full AE model (architecture + weights)
+    # 3) Load full AE model)
     model = load_model(model_path)
     model_input_dim = model.input_shape[-1]
     print(f"Model input dim: {model_input_dim}")
 
-    # Sanity check: scaler, model, and df must all agree
+    #check: scaler, model, and df must all agree
     if model_input_dim != expected_dim:
         raise ValueError(
             f"Shape mismatch: scaler expects {expected_dim}, "
@@ -118,9 +104,7 @@ def analyze_category(df, model_path, scaler_path):
     }
 
 
-# ============================================================
-# MAIN
-# ============================================================
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--input-dir", required=True)
@@ -160,7 +144,7 @@ def main():
         return
 
     # Sort by anomaly score (descending)
-    results.sort(key=lambda x: x["avg_error"], reverse=True)
+    results.sort(key=lambda x: x["avg_error"])
     top3 = results[:3]
 
   
