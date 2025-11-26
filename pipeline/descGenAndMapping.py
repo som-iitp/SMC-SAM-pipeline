@@ -5,9 +5,7 @@ from sentence_transformers import SentenceTransformer, util
 from unsloth import FastLanguageModel
 import torch
 
-# ======================================================
-# CONFIG
-# ======================================================
+
 MODEL_DIR = "Models/smc-sam-mistral-lora"
 MITRE_FILE = "mitre_procedures_with_tactics.csv"
 
@@ -35,9 +33,6 @@ MITRE_NAMES = df["Technique Name"].astype(str).tolist()
 MITRE_EMB   = embedder.encode(MITRE_TEXTS, convert_to_tensor=True)
 
 
-# ======================================================
-# GENERATE DESCRIPTION using YOUR MODEL
-# ======================================================
 def generate(syscall: str) -> str:
     prompt = (
         f"<s>[INST] {SYSTEM_PROMPT}\n"
@@ -57,15 +52,23 @@ def generate(syscall: str) -> str:
     return tokenizer.decode(output[0], skip_special_tokens=True).strip()
 
 
-# ======================================================
-# MAP to MITRE Techniques
-# ======================================================
+
 def map_syscall(syscall):
     desc = generate(syscall)
 
     emb = embedder.encode(desc, convert_to_tensor=True)
     scores = util.cos_sim(emb, MITRE_EMB)[0]
     best = scores.argmax().item()
+    best_score = scores[best].item()
+    
+    if best_score < 0.6:
+        print("\nMAPPING FAILED")
+        print(f" SYS CALL       : {syscall}")
+        print(f" GENERATED DESC : {desc}\n")
+        print(f"No suitable MITRE match found (score={best_score:.4f} < 0.6 threshold)")
+    
+        return
+
 
     print("\n=============== MAPPING COMPLETE ===============")
     print(f" SYS CALL        : {syscall}")
@@ -77,9 +80,7 @@ def map_syscall(syscall):
     print("================================================\n")
 
 
-# ======================================================
-# CLI Entry
-# ======================================================
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--syscall", required=True)
