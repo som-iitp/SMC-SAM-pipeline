@@ -100,7 +100,7 @@ def analyze_category(df, model_path, scaler_path):
 
   
     contrib = np.mean(np.abs(X - recon), axis=0)
-    top_idx = np.argsort(contrib)[10:]
+    top_idx = np.argsort(contrib)[:10]
     top_syscalls = [feature_names[i] for i in top_idx]
 
     return {
