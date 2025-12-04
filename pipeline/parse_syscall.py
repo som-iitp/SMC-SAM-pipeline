@@ -4,10 +4,10 @@ import argparse
 import pandas as pd
 from dotenv import load_dotenv
 
-# Load environment variables from .env if present
+# Load environment
 load_dotenv()
 
-# === Load Syscall Categories from External Private JSON === #
+# === Load Syscall Categories #
 def load_categories():
     categories_file = os.getenv("SYS_CALL_CATEGORIES", "config/categories.json")
     if not os.path.exists(categories_file):
